@@ -1,0 +1,31 @@
+# Heart Disease Prediction API - Kubernetes Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: heart-disease-api-ingress
+  namespace: heart-disease-ml
+  labels:
+    app: heart-disease-api
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  rules:
+  - host: heart-disease-api.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: heart-disease-api-service
+            port:
+              number: 80
+  # For production with TLS:
+  # tls:
+  # - hosts:
+  #   - heart-disease-api.yourdomain.com
+  #   secretName: heart-disease-api-tls

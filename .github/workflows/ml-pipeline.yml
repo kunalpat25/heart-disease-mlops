@@ -1,0 +1,225 @@
+name: ML Pipeline CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.10'
+  DOCKER_IMAGE: heart-disease-api
+
+jobs:
+  # Job 1: Linting
+  lint:
+    name: Code Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install linting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+    
+    - name: Run flake8 linting
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 src app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src app tests --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+    
+    - name: Check code formatting with Black
+      run: |
+        black --check --diff src app tests || echo "Code formatting issues found (non-blocking)"
+
+  # Job 2: Unit Tests
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run unit tests with coverage
+      run: |
+        pytest tests/ -v --cov=src --cov=app --cov-report=xml --cov-report=html --junitxml=test-results.xml
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          test-results.xml
+          htmlcov/
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.xml
+
+  # Job 3: Model Training
+  train:
+    name: Model Training
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Download dataset
+      run: |
+        python data/download_data.py
+    
+    - name: Train model
+      run: |
+        python scripts/train_model.py
+    
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: model-artifacts
+        path: |
+          models/
+          mlruns/
+
+  # Job 4: Build Docker Image
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: train
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download model artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: model-artifacts
+        path: .
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ env.DOCKER_IMAGE }}:${{ github.sha }} -t ${{ env.DOCKER_IMAGE }}:latest .
+    
+    - name: Test Docker container
+      run: |
+        # Start container in background
+        docker run -d -p 8000:8000 --name test-container ${{ env.DOCKER_IMAGE }}:latest
+        
+        # Wait for container to start
+        sleep 10
+        
+        # Test health endpoint
+        curl -f http://localhost:8000/health || exit 1
+        
+        # Clean up
+        docker stop test-container
+        docker rm test-container
+    
+    - name: Save Docker image
+      run: |
+        docker save ${{ env.DOCKER_IMAGE }}:latest | gzip > docker-image.tar.gz
+    
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-image
+        path: docker-image.tar.gz
+
+  # Job 5: Security Scan (Optional)
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install safety
+      run: pip install safety
+    
+    - name: Run security scan
+      run: |
+        safety check -r requirements.txt --output text || echo "Security vulnerabilities found (check report)"
+
+  # Job 6: Deploy (Manual trigger for production)
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download Docker image
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+        path: .
+    
+    - name: Load Docker image
+      run: |
+        docker load < docker-image.tar.gz
+    
+    - name: Deploy notification
+      run: |
+        echo "🚀 Deployment ready!"
+        echo "Docker image: ${{ env.DOCKER_IMAGE }}:latest"
+        echo "To deploy to Kubernetes, run:"
+        echo "  kubectl apply -f k8s/"

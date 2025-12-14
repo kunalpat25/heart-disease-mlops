@@ -1,0 +1,12 @@
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: heart-disease-api-config
+  namespace: heart-disease-ml
+  labels:
+    app: heart-disease-api
+data:
+  PYTHONUNBUFFERED: "1"
+  LOG_LEVEL: "INFO"
+  MODEL_VERSION: "1.0.0"
