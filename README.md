@@ -201,14 +201,13 @@ Services:
 
 ## ☸️ Kubernetes Deployment
 
-### Local Deployment (Minikube)
+### Local Deployment (Docker Desktop)
 
 ```bash
-# Start Minikube
-minikube start
+# Enable Kubernetes in Docker Desktop:
+# Settings → Kubernetes → Enable Kubernetes → Apply & Restart
 
-# Build image in Minikube
-eval $(minikube docker-env)
+# Build Docker image
 docker build -t heart-disease-api:latest .
 
 # Deploy to Kubernetes
@@ -217,23 +216,12 @@ kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 
-# Get service URL
-minikube service heart-disease-api-service -n heart-disease-ml --url
-```
+# Verify deployment
+kubectl get pods -n heart-disease-ml
+kubectl get services -n heart-disease-ml
 
-### Cloud Deployment (GKE/EKS/AKS)
-
-1. Push Docker image to registry:
-```bash
-docker tag heart-disease-api:latest gcr.io/YOUR_PROJECT/heart-disease-api:latest
-docker push gcr.io/YOUR_PROJECT/heart-disease-api:latest
-```
-
-2. Update `k8s/deployment.yaml` with your image URL
-
-3. Apply manifests:
-```bash
-kubectl apply -f k8s/
+# Access the service (if using NodePort or LoadBalancer)
+# http://localhost:80
 ```
 
 ## 📡 API Endpoints
@@ -250,7 +238,7 @@ kubectl apply -f k8s/
 ### Sample Prediction Request
 
 ```bash
-curl -X POST "http://localhost:8000/predict" \
+curl -X POST "http://localhost:80/predict" \
   -H "Content-Type: application/json" \
   -d '{
     "age": 63,
@@ -337,13 +325,3 @@ The GitHub Actions pipeline includes:
 ## 📝 License
 
 This project is licensed under the MIT License.
-
-## 👤 Author
-
-**Your Name**
-- BITS Pilani - AIMLCZG523 MLOps Assignment
-
-## 🙏 Acknowledgments
-
-- UCI Machine Learning Repository for the dataset
-- BITS Pilani for the course curriculum

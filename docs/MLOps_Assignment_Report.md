@@ -921,39 +921,6 @@ This project successfully demonstrated an end-to-end MLOps pipeline for heart di
 
 The pipeline demonstrates industry best practices and provides a solid foundation for deploying ML models in production environments.
 
-### Future Improvements
-
-- Implement A/B testing for model comparison in production
-- Add model drift detection
-- Integrate with cloud providers (AWS/GCP/Azure)
-- Implement feature store for feature management
-- Add automated retraining pipeline
-
----
-
-## 14. References
-
-1. UCI Machine Learning Repository - Heart Disease Dataset
-   - https://archive.ics.uci.edu/dataset/45/heart+disease
-
-2. MLflow Documentation
-   - https://mlflow.org/docs/latest/index.html
-
-3. FastAPI Documentation
-   - https://fastapi.tiangolo.com/
-
-4. Kubernetes Documentation
-   - https://kubernetes.io/docs/home/
-
-5. Prometheus Documentation
-   - https://prometheus.io/docs/
-
-6. Docker Documentation
-   - https://docs.docker.com/
-
-7. GitHub Actions Documentation
-   - https://docs.github.com/en/actions
-
 ---
 
 ## Appendix A: Screenshots Reference
@@ -985,5 +952,8 @@ The pipeline demonstrates industry best practices and provides a solid foundatio
 | `/metrics` | GET | Prometheus metrics |
 
 ---
+
+## Link to code repository: [GitHub - heart-disease-mlops](
+  https://github.com/kunalpat25/heart-disease-mlops)
 
 *End of Report*
