@@ -4,6 +4,9 @@
 ![Python](https://img.shields.io/badge/python-3.10-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
+## Github Repository URL
+https://github.com/kunalpat25/heart-disease-mlops
+
 ## 📋 Project Overview
 
 This project implements an end-to-end MLOps pipeline for predicting heart disease risk based on patient health data. It demonstrates modern MLOps best practices including:
@@ -68,15 +71,13 @@ heart-disease-mlops/
 ### Prerequisites
 
 - Python 3.10+
-- Docker & Docker Compose
+- Docker Desktop for docker, local k8s deployment
 - Git
-- (Optional) kubectl for Kubernetes deployment
-- (Optional) Minikube or Docker Desktop for local K8s
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/heart-disease-mlops.git
+git clone https://github.com/kunalpat25/heart-disease-mlops.git
 cd heart-disease-mlops
 ```
 
